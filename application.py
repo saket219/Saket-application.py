@@ -1,20 +1,18 @@
 import os
-import os
-import psycopg2
+import requests
 
-DATABASE_URL = os.environ['postgres://uproifqruttsfk:55353a88f46ed271746bbbe67ce0426f3ba979e96bc987a9e4f0e41b53ad6bda@ec2-34-206-252-187.compute-1.amazonaws.com:5432/d9oqhrkjof2h64']
-
-conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-
+from flask import Flask, render_template
 from flask import Flask, session
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+from flask import Flask, render_template
 
-app = Flask(__Saket__)
+
+app = Flask(__name__)
 
 # Check for environment variable
-if not os.getenv("postgres://uproifqruttsfk:55353a88f46ed271746bbbe67ce0426f3ba979e96bc987a9e4f0e41b53ad6bda@ec2-34-206-252-187.compute-1.amazonaws.com:5432/d9oqhrkjof2h64"):
+if not os.getenv("DATABASE_URL"):
     raise RuntimeError("DATABASE_URL is not set")
 
 # Configure session to use filesystem
@@ -23,28 +21,92 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Set up database
-engine = create_engine(os.getenv("postgres://uproifqruttsfk:55353a88f46ed271746bbbe67ce0426f3ba979e96bc987a9e4f0e41b53ad6bda@ec2-34-206-252-187.compute-1.amazonaws.com:5432/d9oqhrkjof2h64"))
+engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
 
-
 @app.route("/")
-def index():
-    return "Project 1: TODO"
+@app.route("/home")
+def home():
+    return render_template('home.html', posts=posts)
 
-import requests
-res = requests.get("https://www.goodreads.com/book/review_counts.json", params={"key": "of9H3ORO18UZNES6gbCNw", "isbns": "9781632168146"})
-print(res.json())
 
-{'books': [{
-                'id': 29207858,
-                'isbn': '1632168146',
-                'isbn13': '9781632168146',
-                'ratings_count': 0,
-                'reviews_count': 1,
-                'text_reviews_count': 0,
-                'work_ratings_count': 26,
-                'work_reviews_count': 113,
-                'work_text_reviews_count': 10,
-                'average_rating': '4.04'
-            }]
-}
+# @app.route("/about")
+# def about():
+ #   return render_template('about.html', title='About')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+from flask import (
+            Flask,
+            g,
+            redirect,
+            render_template,
+            request,
+            session,
+            url_for
+                )
+
+class User:
+        def __init__(self, id, username, password):
+            self.id = id
+            self.username = username
+            self.password = password
+
+        def __repr__(self):
+            return f'<User: {self.username}>'
+
+users = []
+users.append(User(id=1, username='Anthony', password='password'))
+users.append(User(id=2, username='Becca', password='secret'))
+users.append(User(id=3, username='Carlos', password='somethingsimple'))
+
+
+app = Flask(__name__)
+app.secret_key = 'somesecretkeythatonlyishouldknow'
+
+@app.before_request
+def before_request():
+    g.user = None
+
+    if 'user_id' in session:
+        user = [x for x in users if x.id == session['user_id']][0]
+        g.user = user
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        session.pop('user_id', None)
+
+        username = request.form['username']
+        password = request.form['password']
+
+        user = [x for x in users if x.username == username][0]
+        if user and user.password == password:
+            session['user_id'] = user.id
+            return redirect(url_for('profile'))
+
+        return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+@app.route('/profile')
+def profile():
+    if not g.user:
+        return redirect(url_for('login'))
+
+    return render_template('profile.html')
+
+# @app.route("/")
+# def index():
+#
+#     return "Rajesh"
+
+if __name__ == '__main__':
+    app.run(host='localhost')
+
+
+
