@@ -1,12 +1,24 @@
 import os
 import requests
 
+
+
+
 from flask import Flask, render_template
 from flask import Flask, session
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from flask import Flask, render_template
+
+
+import requests
+
+
+res = requests.get("https://www.goodreads.com/book/review_counts.json",
+                   params={"key": "of9H3ORO18UZNES6gbCNw", "isbns": "9781632168146"})
+print(res.json())
+
 
 
 app = Flask(__name__)
@@ -27,7 +39,7 @@ db = scoped_session(sessionmaker(bind=engine))
 @app.route("/")
 @app.route("/home")
 def home():
-    return render_template('home.html', posts=posts)
+    return render_template('home.html')
 
 
 # @app.route("/about")
@@ -89,14 +101,14 @@ def login():
             session['user_id'] = user.id
             return redirect(url_for('profile'))
 
-        return redirect(url_for('login'))
+        return redirect(url_f or('login'))
 
     return render_template('login.html')
 
 @app.route('/profile')
 def profile():
     if not g.user:
-        return redirect(url_for('login'))
+        return redirect(url_for(' login'))
 
     return render_template('profile.html')
 
